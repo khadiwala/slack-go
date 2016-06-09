@@ -31,17 +31,17 @@
 (def help
   "Supported Commands
   ```/go start <user1> <user2> [board-dimension]```
-  >Start a game with `user1` playing black and `user2` playing white. `board-dimension` defaults to 9.
+  Start a game with `user1` playing black and `user2` playing white. `board-dimension` defaults to 9.
   ```/go play <move>```
-  >Plays a move. Moves look like `d6`
+  Plays a move. Moves look like `d6`
   ```/go show```
-  >Image of the current board state
+  Image of the current board state
   ```/go pass```
-  >Allow the other player to go
+  Allow the other player to go
   ```/go end```
-  >Finish the game, which allows another game to start on the channel or DM
+  Finish the game, which allows another game to start on the channel or DM
   ```/go help```
-  >Display this help text")
+  Display this help text")
 
 ;; Board rendering
 
