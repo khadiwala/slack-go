@@ -21,10 +21,6 @@
 ;;; channel + users
 ;;; make imgur upload async
 ;;; improve message formatting
-;;; help command
-;;; default board size
-;;; go flip
-;;; go trashtalk
 ;;; switch to slack RTM? (also have channel replay)
 
 
@@ -32,6 +28,20 @@
 (def upload-endpoint "https://api.imgur.com/3/image")
 (def client-id "Client-Id e1e3dd0dbe53d5a")
 (def default-board-size "9")
+(def help
+  "Supported Commands
+  ```/go start <user1> <user2> [board-dimension]```
+  >Start a game with `user1` playing black and `user2` playing white. `board-dimension` defaults to 9.
+  ```/go play <move>```
+  >Plays a move. Moves look like `d6`
+  ```/go show```
+  >Image of the current board state
+  ```/go pass```
+  >Allow the other player to go
+  ```/go end```
+  >Finish the game, which allows another game to start on the channel or DM
+  ```/go help```
+  >Display this help text")
 
 ;; Board rendering
 
@@ -173,7 +183,8 @@
       (= cmd "play") (apply play channel-key user-key args)
       (= cmd "pass") (apply pass channel-key user-key args)
       (= cmd "end") (apply end channel-key user-key args)
-      (= cmd "show") (show channel-key user-key))))
+      (= cmd "show") (show channel-key user-key)
+      (= cmd "help") (in-channel-response help))))
 
 (defroutes app-routes
   (POST "/go" [channel_name user_name text]
