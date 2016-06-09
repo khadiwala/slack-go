@@ -31,7 +31,7 @@
 ;; Board rendering
 
 (defn board->svg [board-state]
-  (board [900 900] 90 (:dim board-state) board-state))
+  (board [900 900] 180 (:dim board-state) board-state))
 
 (defn stone-str [black white move]
   (cond (black move) "X"

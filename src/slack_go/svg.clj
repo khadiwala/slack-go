@@ -123,16 +123,23 @@
    {:x x :y y :font-size 20 :fill "#4D4D4D" :font-family "Helvetica"}
    label])
 
-(defn draw-labels [side-margin geom dim]
-  (let [delta (spacing geom dim)
+(defn draw-labels [side-margin [w h] dim]
+  (let [delta (spacing [w h] dim)
         margin (quot side-margin 2)
-        margin3 (quot (* 3 side-margin) 4)
         letters (take dim letters)]
     (concat
+
+     ;; vertical labels
      (for [i (range dim)]
-       (label 10 (+ side-margin (* delta i)) (str (- dim i))))
+       (label 15 (+ side-margin (* delta i)) (str (- dim i))))
      (for [i (range dim)]
-       (label (+ margin3 (* delta i)) (+ 5 margin) (nth letters i))))))
+       (label (+ (* 2 side-margin) w -45) (+ side-margin (* delta i)) (str (- dim i))))
+
+     ;; horizontal labels
+     (for [i (range dim)]
+       (label (+ side-margin (* delta i) -6) (+ 5 margin) (nth letters i)))
+     (for [i (range dim)]
+       (label (+ side-margin (* delta i) -6) (+ h (* 2 side-margin) -15) (nth letters i))))))
 
 (defn board
   [[width height] margin dim board-state]
