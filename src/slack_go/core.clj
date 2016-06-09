@@ -28,6 +28,10 @@
 ;;; switch to slack RTM? (also have channel replay)
 
 
+;; constants
+(def upload-endpoint "https://api.imgur.com/3/image")
+(def client-id "Client-Id e1e3dd0dbe53d5a")
+(def default-board-size "9")
 
 ;; Board rendering
 
@@ -57,8 +61,6 @@
     (.close ostream)))
 
 ;; imgur
-(def upload-endpoint "https://api.imgur.com/3/image")
-(def client-id "Client-Id e1e3dd0dbe53d5a")
 (def extract-link (comp :link :data :body))
 (defn upload [fn]
   (let [resp (client/post upload-endpoint
@@ -108,17 +110,18 @@
 
 (defn start
   "start a game on the channel, responds with imgur link"
-  [channel un1 un2 dim]
-  (let [black (keyword un1)
-        white (keyword un2)
-        initial (initial-game (parse-int dim) black white)]
-    (dosync
-     (if-let [existing (channel @game-map)]
-       "game already in progress on channel"
-       (in-channel-response
-        (str "Started game between "
-             un1 " and " un2 ":\n"
-             (alter-and-upload channel #(assoc % channel initial))))))))
+  ([channel un1 un2] (start channel un1 un2 default-board-size))
+  ([channel un1 un2 dim]
+   (let [black (keyword un1)
+         white (keyword un2)
+         initial (initial-game (parse-int dim) black white)]
+     (dosync
+      (if-let [existing (channel @game-map)]
+        "game already in progress on channel"
+        (in-channel-response
+         (str "Started game between "
+              un1 " and " un2 ":\n"
+              (alter-and-upload channel #(assoc % channel initial)))))))))
 
 (defn play
   "Play move, update memory, return imgur link to new board state"
