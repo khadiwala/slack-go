@@ -19,14 +19,15 @@
 ;;; TODO:
 ;;; scoring
 ;;; channel + users
-;;; switch to slack RTM? (also have go kick) (also have channel replay)
 ;;; make imgur upload async
 ;;; improve message formatting
 ;;; help command
 ;;; default board size
 ;;; go flip
 ;;; go trashtalk
-;;; random AI
+;;; switch to slack RTM? (also have channel replay)
+
+
 
 ;; Board rendering
 
@@ -44,17 +45,6 @@
     (for [y (range dim)]
       (for [x (range dim)]
         (stone-str bset wset [x y])))))
-
-(defn to-jpg [svg-string output-fn]
-  (let [rdr (new StringReader svg-string)
-        inp (new TranscoderInput rdr)
-        transcoder (new JPEGTranscoder)
-        ostream (new FileOutputStream output-fn)
-        out (new TranscoderOutput ostream)]
-    (.addTranscodingHint transcoder JPEGTranscoder/KEY_QUALITY (new Float 1.0))
-    (.transcode transcoder inp out)
-    (.flush ostream)
-    (.close ostream)))
 
 (defn to-png [svg-string output-fn]
   (let [rdr (new StringReader svg-string)
@@ -83,12 +73,12 @@
       (to-png "out.png"))
   (upload "out.png"))
 
-(defn in-channel-response [text]
+(defn in-channel-response
+  "Make slack response public"
+  [text]
   {:headers {"Content-Type" "application/json"}
    :body {:text text
-          :response_type "in_channel"
-          :link_names 1
-          :parse "full"}})
+          :response_type "in_channel"}})
 
 (defn parse-int [s]
   (. Integer parseInt s))
@@ -98,7 +88,6 @@
   [[alpha & numeric] dim]
   [(- (int alpha) (int \a))
    (- dim (parse-int (apply str numeric)))])
-
 
 (def game-map (ref {}))
 
@@ -166,9 +155,10 @@
 (defn show
   "Respond with imgur link of current board state"
   [channel user]
-  (-> (channel @game-map)
-      board->link
-      in-channel-response))
+  (in-channel-response
+   (if-let [curr (channel @game-map)]
+     (board->link curr)
+     "No game in progress")))
 
 (defn posted [channel-name user-name text]
   (let [[cmd & args] (split (lower-case text) #"\s+")
