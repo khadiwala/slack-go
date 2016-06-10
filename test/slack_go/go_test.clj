@@ -3,23 +3,23 @@
             [slack-go.go :refer :all]
             [clojure.set :refer [union difference]]))
 
-(def initial
+(defn initial [dim]
   {:black []
    :white []
-   :dim 9
+   :dim dim
    :turn :black
-   :black-player :black
-   :white-player :white})
+   :black-player :b
+   :white-player :w})
 
-(defn show [obj] (prn obj) obj)
 
 (defn is-not [pred] (is (not pred)))
 
 (defn coords->moves [color coords]
   (map (fn [coord] [color coord]) coords))
 
-(defn play-all [moves]
-  (reduce play-move initial moves))
+(defn play-all
+  ([moves] (play-all moves 9))
+  ([moves dim] (reduce play-move (initial dim) moves)))
 
 (defn unoccupied? [board move] (not ((occupied board) move)))
 
@@ -138,4 +138,33 @@
       (is (ko-rule-violated? setup [:black [2 1]]))
       (is (illegal-move? setup [:black [2 1]])))))
 
+(deftest scoring
 
+  (testing "all black"
+    (let [setup (play-all (concat
+                           (for [x (range 3)] [:black [3 x]])
+                           (for [x (range 3)] [:black [x 3]])))]
+      (is (= 81 (:black (score-counts setup))))
+      (is (= 0 (:white (score-counts setup))))
+      (is (= 0 (:neutral (score-counts setup))))))
+
+  (testing "black corner"
+    (let [setup (play-all (concat
+                           (for [x (range 3)] [:black [2 x]])
+                           (for [x (range 3)] [:black [x 2]])
+                           [[:white [5 5]]]))]
+      (is (= 9 (:black (score-counts setup))))
+      (is (= 1 (:white (score-counts setup))))
+      (is (= 71 (:neutral (score-counts setup))))))
+
+  (testing "big board, black corner"
+    (let [setup (play-all (concat
+                           (for [x (range 3)] [:black [2 x]])
+                           (for [x (range 3)] [:black [x 2]])
+                           [[:white [5 5]]]) 100)]
+      (is (= 9 (:black (score-counts setup))))
+      (is (= 1 (:white (score-counts setup))))
+      (is (= (- (* 100 100) 9 1) (:neutral (score-counts setup)))))))
+
+
+;(score-counts (play-all (concat (for [x (range 3)] [:black [2 x]]) (for [x (range 3)] [:black [x 2]]) [[:white [5 5]]])))

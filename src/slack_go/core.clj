@@ -2,7 +2,8 @@
   (:require [slack-go.svg :refer :all]
             [slack-go.go :refer :all]
             [clojure.set :refer [union]]
-            [clojure.string :refer [split lower-case]]
+            [clojure.string :refer [split lower-case starts-with?]]
+            [clojure.string :as string]
             [clojure.math.numeric-tower :refer [abs]]
             [the.parsatron :refer [run]]
             [clj-http.client :as client]
@@ -38,6 +39,8 @@
   Image of the current board state
   ```/go pass```
   Allow the other player to go
+  ```/go score [komi]```
+  Score a finished game with a naive algorithm
   ```/go end```
   Finish the game, which allows another game to start on the channel or DM
   ```/go help```
@@ -47,6 +50,13 @@
 
 (defn board->svg [board-state]
   (board [900 900] 180 (:dim board-state) board-state))
+
+(defn board->scored-svg [board-state]
+  (board [900 900]
+         180
+         (:dim board-state)
+         board-state
+         (score-board board-state)))
 
 (defn stone-str [black white move]
   (cond (black move) "X"
@@ -80,9 +90,11 @@
     (extract-link resp)))
 
 (defn board->link [board]
-  (-> board
-      board->svg
-      (to-png "out.png"))
+  (-> board board->svg (to-png "out.png"))
+  (upload "out.png"))
+
+(defn board->scored-link [board]
+  (-> board board->scored-svg (to-png "out.png"))
   (upload "out.png"))
 
 (defn in-channel-response
@@ -118,19 +130,23 @@
    black-player :black
    white-player :white})
 
+(defn atify [un]
+  (str (if (starts-with? un "@") "" "@") un))
+
 (defn start
   "start a game on the channel, responds with imgur link"
-  ([channel un1 un2] (start channel un1 un2 default-board-size))
+  ([channel un1 un2]
+   (start channel un1 un2 default-board-size))
   ([channel un1 un2 dim]
-   (let [black (keyword un1)
-         white (keyword un2)
+   (let [black (keyword (string/replace un1 #"@" ""))
+         white (keyword (string/replace un2 #"@" ""))
          initial (initial-game (parse-int dim) black white)]
      (dosync
       (if-let [existing (channel @game-map)]
         "game already in progress on channel"
         (in-channel-response
          (str "Started game between "
-              un1 " and " un2 ":\n"
+              (atify un1) " and " (atify un2) ":\n"
               (alter-and-upload channel #(assoc % channel initial)))))))))
 
 (defn play
@@ -173,17 +189,35 @@
      (board->link curr)
      "No game in progress")))
 
+(defn score-string [board komi]
+  (let [{black :black white :white} (score-counts board)]
+    (str "black: " black
+         " white: " (+ white (Double/parseDouble komi))
+         ", after komi of " komi)))
+
+(defn score
+  "Estimate the score (trivial fill solution)"
+  ([channel user]
+   (score channel user "6.5"))
+  ([channel user komi]
+   (in-channel-response
+    (if-let [curr (channel @game-map)]
+      (str (board->scored-link curr) "\n"
+           (score-string curr komi))
+      "No game in progress"))))
+
 (defn posted [channel-name user-name text]
   (let [[cmd & args] (split (lower-case text) #"\s+")
         channel-key (keyword channel-name)
-        user-key (keyword (str "@" user-name))]
-    (prn text)
+        user-key (keyword user-name)]
+    (prn (str user-name " cmd: " text))
     (cond
       (= cmd "start") (apply start channel-key args)
       (= cmd "play") (apply play channel-key user-key args)
       (= cmd "pass") (apply pass channel-key user-key args)
       (= cmd "end") (apply end channel-key user-key args)
       (= cmd "show") (show channel-key user-key)
+      (= cmd "score") (apply score channel-key user-key args)
       (= cmd "help") (in-channel-response help))))
 
 (defroutes app-routes

@@ -90,10 +90,22 @@
             :fill "none"
             :r (quot r 2)}])
 
+(defn square-marker [l color [x y]]
+  (let [translation (quot l 2)]
+  [:rect {:x (- x translation)
+          :y (- y translation)
+          :width l
+          :height l
+          :stroke (get-color color)
+          :fill (get-color color)}]))
+
 (defn spacing [[width height] dim]
   (min (quot height (- dim 1)) (quot width (- dim 1))))
 
 (defn radius [geom dim]
+  (quot (spacing geom dim) 3))
+
+(defn length [geom dim]
   (quot (spacing geom dim) 3))
 
 (defn draw-stones
@@ -141,19 +153,34 @@
      (for [i (range dim)]
        (label (+ side-margin (* delta i) -6) (+ h (* 2 side-margin) -15) (nth letters i))))))
 
+(defn draw-score [origin geom dim board-state {black :black white :white}]
+  (let [black? (set (:black board-state))
+        white? (set (:white board-state))]
+    (concat (->> black
+                 (filter (complement black?))
+                 (map #(square-marker (length geom dim) :black (stone->pos origin geom dim %))))
+            (->> white
+                 (filter (complement white?))
+                 (map #(square-marker (length geom dim) :white (stone->pos origin geom dim %)))))))
+
 (defn board
-  [[width height] margin dim board-state]
-  (let [side-margin (/ margin 2)
-        origin      [side-margin side-margin]
-        geom        [(- width margin) (- height margin)]]
-    (html
-     [:svg
-      {:xmlns "http://www.w3.org/2000/svg"
-       :width width
-       :height height
-       :viewBox (string/join " " [0 0 width height])}
-      (concat [[:rect {:width width :height height :fill wood}]]
-              (draw-board origin geom dim)
-              (draw-stones origin geom dim board-state)
-              (draw-special origin geom dim board-state)
-              (draw-labels side-margin geom dim))])))
+
+  ([[width height] margin dim board-state]
+   (board [width height] margin dim board-state {:black nil :white nil}))
+
+  ([[width height] margin dim board-state score]
+   (let [side-margin (/ margin 2)
+         origin      [side-margin side-margin]
+         geom        [(- width margin) (- height margin)]]
+     (html
+      [:svg
+       {:xmlns "http://www.w3.org/2000/svg"
+        :width width
+        :height height
+        :viewBox (string/join " " [0 0 width height])}
+       (concat [[:rect {:width width :height height :fill wood}]]
+               (draw-board origin geom dim)
+               (draw-stones origin geom dim board-state)
+               (draw-special origin geom dim board-state)
+               (draw-labels side-margin geom dim)
+               (draw-score origin geom dim board-state score))]))))
