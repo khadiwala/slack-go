@@ -4,6 +4,8 @@ Play go over slack
 
 A hack to play the game [go (AKA weiqi, baduk)](https://en.wikipedia.org/wiki/Go_(game)) with slack slash commands. The server will respond to moves by generating and image, uploading it to imgur, and posting a link to the image in the channel/DM.
 
+![playing a move](http://i.imgur.com/kI4cWcO.jpg)
+
 ## Setup
 Just add a [slash command](https://my.slack.com/services/new/slash-commands) to your team (a command of go is assumed for this readme), point it wherever you deploy this server.
 ### Heroku
@@ -32,9 +34,17 @@ Image of the current board state
 
 Allow the other player to go
 
+```/go score [komi]```
+
+Score a finished game with a naive algorithm
+
 ```/go end```
 
 Finish the game, which allows another game to start on the channel or DM
+
+```/go kick```
+
+Wake up the bot (useful for an idle heroku instance)
 
 ```/go help```
 
