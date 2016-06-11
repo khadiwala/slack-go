@@ -18,9 +18,9 @@
            [java.io StringReader FileOutputStream]))
 
 ;;; TODO:
-;;; scoring
 ;;; channel + users
 ;;; make imgur upload async
+;;; scoring
 ;;; improve message formatting
 ;;; switch to slack RTM? (also have channel replay)
 
@@ -43,6 +43,8 @@
   Score a finished game with a naive algorithm
   ```/go end```
   Finish the game, which allows another game to start on the channel or DM
+  ```/go kick```
+  Wake up the bot (useful for an idle heroku instance)
   ```/go help```
   Display this help text")
 
@@ -233,7 +235,8 @@
       (= cmd "show") (show channel-key user-key)
       (= cmd "score") (apply score channel-key user-key args)
       (= cmd "ai") (apply ai channel-key user-key args)
-      (= cmd "help") (in-channel-response help))))
+      (= cmd "help") (in-channel-response help)
+      (= cmd "kick") "I'm up!")))
 
 (defroutes app-routes
   (POST "/go" [channel_id user_name text :as req]
