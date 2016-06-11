@@ -225,7 +225,6 @@
   (let [[cmd & args] (split (lower-case text) #"\s+")
         channel-key (keyword channel-name)
         user-key (keyword user-name)]
-    (prn (str user-name " cmd: " text))
     (cond
       (= cmd "start") (apply start channel-key args)
       (= cmd "play") (apply play channel-key user-key args)
@@ -237,8 +236,11 @@
       (= cmd "help") (in-channel-response help))))
 
 (defroutes app-routes
-  (POST "/go" [channel_name user_name text]
-    (posted channel_name user_name text))
+  (POST "/go" [channel_id user_name text :as req]
+    (prn req)
+    (let [resp (posted channel_id user_name text)]
+      (prn resp)
+      resp))
   (route/resources "/")
   (route/not-found "not found"))
 
