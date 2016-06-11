@@ -2,7 +2,7 @@
 Play go over slack
 > If you're on slack, you're technically working.
 
-A hack to play the game [go (AKA weiqi, baduk)](https://en.wikipedia.org/wiki/Go_(game)) with slack slash commands. The server will respond to moves by generating and image, uploading it to imgur, and posting a link to the image in the channel/DM.
+A hack to play the game [go (AKA weiqi, baduk)](https://en.wikipedia.org/wiki/Go_(game)) with slack slash commands. The server will respond to moves by generating an image, uploading it to imgur, and posting a link to the image in the channel/DM.
 
 ![playing a move](http://i.imgur.com/kI4cWcO.jpg)
 
