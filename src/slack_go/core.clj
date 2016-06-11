@@ -135,8 +135,10 @@
 
 (defn start
   "start a game on the channel, responds with imgur link"
+
   ([channel un1 un2]
    (start channel un1 un2 default-board-size))
+
   ([channel un1 un2 dim]
    (let [black (keyword (string/replace un1 #"@" ""))
          white (keyword (string/replace un2 #"@" ""))
@@ -154,11 +156,22 @@
   [channel user-name coord]
   (in-channel-response
    (dosync
-    (let [curr (channel @game-map)
-          move [(user-name curr) (slack-pos->i coord (:dim curr))]]
-      (if-let [err-string (illegal-move? curr move)]
-        err-string
-        (alter-and-upload channel #(assoc % channel (play-move curr move))))))))
+    (if-let [curr (channel @game-map)]
+      (let [move [(user-name curr) (slack-pos->i coord (:dim curr))]]
+        (if-let [err-string (illegal-move? curr move)]
+          err-string
+          (alter-and-upload channel #(assoc % channel (play-move curr move)))))
+      "No game in progress"))))
+
+(defn ai
+  [channel user-name]
+  (in-channel-response
+   (dosync
+    (if-let [curr (channel @game-map)]
+      (if-let [move (random-move curr)]
+        (alter-and-upload channel #(assoc % channel (play-move curr move)))
+        "No legal moves to play")
+      "No game in progress"))))
 
 (defn pass
   "player passes"
@@ -189,6 +202,8 @@
      (board->link curr)
      "No game in progress")))
 
+
+
 (defn score-string [board komi]
   (let [{black :black white :white} (score-counts board)]
     (str "black: " black
@@ -218,6 +233,7 @@
       (= cmd "end") (apply end channel-key user-key args)
       (= cmd "show") (show channel-key user-key)
       (= cmd "score") (apply score channel-key user-key args)
+      (= cmd "ai") (apply ai channel-key user-key args)
       (= cmd "help") (in-channel-response help))))
 
 (defroutes app-routes

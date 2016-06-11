@@ -152,9 +152,12 @@
     (ko-rule-violated? board-state move) "Move would return board to previous state"
     :else false))
 
+
+
+
 ;; scoring
 
-(defn compliment [dim positions]
+(defn inverse-coords [dim positions]
   "all positions not in positions"
   (->> (mapcat #(for [y (range dim)] [% y]) (range dim))
        (filter (comp not positions))
@@ -231,7 +234,7 @@
   [{dim :dim :as board}]
   (let [occ (occupied board)
         {black :black white :white} (probably-alive board occ)
-        partitioned (part dim (set black) (set white) (compliment dim occ))]
+        partitioned (part dim (set black) (set white) (inverse-coords dim occ))]
     {:black (into (:black partitioned) black)
      :white (into (:white partitioned) white)
      :neutral (:neutral partitioned)}))
@@ -240,3 +243,20 @@
   (let [{:keys [black white neutral]} (score-board board)]
     {:black (count black) :white (count white) :neutral (count neutral)}))
 
+
+
+
+;; "AI"
+(defn all-moves [dim color]
+  (map
+   (fn [coord] [color coord])
+   (inverse-coords dim #{})))
+
+(defn random-move
+  "Return a randomly determined legal move. If no move exists, return nil"
+  [{dim :dim color :turn :as board}]
+  (let [moves (shuffle (all-moves dim color))]
+    (->> (all-moves dim color)
+         shuffle
+         (filter (complement (partial illegal-move? board)))
+         first)))
