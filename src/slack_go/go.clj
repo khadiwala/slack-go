@@ -209,32 +209,35 @@
 
 (defn part
   "Partition all empty points on board as black, white, or neutral"
-  [dim black? white? unclaimed]
-  (loop [todo {:black #{} :white #{} :neutral #{} :unclaimed unclaimed}]
-    (if (empty? (:unclaimed todo))
-      (dissoc todo :unclaimed)
-      (recur (incorporate dim black? white? todo (first (:unclaimed todo)))))))
+  [{black :black white :white dim :dim :as board}]
+  (let [black? (set black)
+        white? (set white)
+        unclaimed (->> board occupied (inverse-coords dim))]
+    (loop [todo {:black #{} :white #{} :neutral #{} :unclaimed unclaimed}]
+      (if (empty? (:unclaimed todo))
+        (dissoc todo :unclaimed)
+        (recur (incorporate dim black? white? todo (first (:unclaimed todo))))))))
 
 (defn two-liberties
   "return only stones that have at least two liberties"
   [groups occupied]
   (->> groups
        (map #(remove-occupied-liberties occupied %))
-       (filter #(> (count (:liberties %)) 0)) ; remove groups with 1 liberty
+       (filter #(> (count (:liberties %)) 1)) ; remove groups with 1 liberty
        (mapcat :stones))) ; convert groups to stones
 
 (defn probably-alive
-  [{black :black white :white dim :dim :as board} occupied]
-  (assoc board
-         :black (two-liberties (to-groups dim black) occupied)
-         :white (two-liberties (to-groups dim white) occupied)))
+  [{black :black white :white dim :dim :as board}]
+  (let [occupied (occupied board)]
+    (assoc board
+           :black (two-liberties (to-groups dim black) occupied)
+           :white (two-liberties (to-groups dim white) occupied))))
 
 (defn score-board
   "Return board partitioned into black/white/neutral"
   [{dim :dim :as board}]
-  (let [occ (occupied board)
-        {black :black white :white} (probably-alive board occ)
-        partitioned (part dim (set black) (set white) (inverse-coords dim occ))]
+  (let [{black :black white :white :as living} (probably-alive board)
+        partitioned (part living)]
     {:black (into (:black partitioned) black)
      :white (into (:white partitioned) white)
      :neutral (:neutral partitioned)}))
@@ -260,3 +263,17 @@
          shuffle
          (filter (complement (partial illegal-move? board)))
          first)))
+
+
+;; print board
+(defn stone-str [black white move]
+  (cond (black move) "X"
+        (white move) "O"
+        :else "-"))
+
+(defn board->ascii [{bs :black ws :white dim :dim}]
+  (let [bset (set bs)
+        wset (set ws)]
+    (for [y (range dim)]
+      (for [x (range dim)]
+        (stone-str bset wset [x y])))))

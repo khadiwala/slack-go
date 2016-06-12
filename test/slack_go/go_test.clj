@@ -1,7 +1,8 @@
 (ns slack-go.go-test
   (:require [clojure.test :refer :all]
             [slack-go.go :refer :all]
-            [clojure.set :refer [union difference]]))
+            [clojure.set :refer [union difference]]
+            [clojure.pprint :refer :all]))
 
 (defn initial [dim]
   {:black []
@@ -140,31 +141,40 @@
 
 (deftest scoring
 
-  (testing "all black"
-    (let [setup (play-all (concat
-                           (for [x (range 3)] [:black [3 x]])
-                           (for [x (range 3)] [:black [x 3]])))]
-      (is (= 81 (:black (score-counts setup))))
-      (is (= 0 (:white (score-counts setup))))
-      (is (= 0 (:neutral (score-counts setup))))))
+  (let [corner-moves
+        (concat (for [x (range 3)] [2 x])
+                (for [x (range 3)] [x 2]))
 
-  (testing "black corner"
-    (let [setup (play-all (concat
-                           (for [x (range 3)] [:black [2 x]])
-                           (for [x (range 3)] [:black [x 2]])
-                           [[:white [5 5]]]))]
-      (is (= 9 (:black (score-counts setup))))
-      (is (= 1 (:white (score-counts setup))))
-      (is (= 71 (:neutral (score-counts setup))))))
+        black-corner (coords->moves :black corner-moves)]
 
-  (testing "big board, black corner"
-    (let [setup (play-all (concat
-                           (for [x (range 3)] [:black [2 x]])
-                           (for [x (range 3)] [:black [x 2]])
-                           [[:white [5 5]]]) 100)]
-      (is (= 9 (:black (score-counts setup))))
-      (is (= 1 (:white (score-counts setup))))
-      (is (= (- (* 100 100) 9 1) (:neutral (score-counts setup)))))))
+    (testing "all black"
+      (let [setup (play-all black-corner)]
+        (is (= 81 (:black (score-counts setup))))
+        (is (= 0 (:white (score-counts setup))))
+        (is (= 0 (:neutral (score-counts setup))))))
+
+    (testing "black corner only"
+      (let [setup (play-all (conj black-corner [:white [5 5]]))]
+        (is (= 9 (:black (score-counts setup))))
+        (is (= 1 (:white (score-counts setup))))
+        (is (= 71 (:neutral (score-counts setup))))))
+
+    (testing "big board, black corner"
+      (let [setup (play-all (conj black-corner [:white [5 5]]) 100)]
+        (is (= 9 (:black (score-counts setup))))
+        (is (= 1 (:white (score-counts setup))))
+        (is (= (- (* 100 100) 9 1) (:neutral (score-counts setup))))))
+
+    (testing "white stone is assumed dead"
+      (let [setup (play-all (conj black-corner
+                                  [:white [5 5]]
+                                  [:white [0 0]]
+                                  [:black [0 1]]))]
+        (pprint (board->ascii setup))
+        (is (= 9 (:black (score-counts setup))))
+        (is (= 1 (:white (score-counts setup))))
+        (is (= 71 (:neutral (score-counts setup))))))))
+
 
 
 ;(score-counts (play-all (concat (for [x (range 3)] [:black [2 x]]) (for [x (range 3)] [:black [x 2]]) [[:white [5 5]]])))

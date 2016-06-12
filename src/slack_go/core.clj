@@ -18,6 +18,7 @@
            [java.io StringReader FileOutputStream]))
 
 ;;; TODO:
+;;; mark stones dead
 ;;; channel + users
 ;;; make imgur upload async
 ;;; scoring
@@ -59,18 +60,6 @@
          (:dim board-state)
          board-state
          (score-board board-state)))
-
-(defn stone-str [black white move]
-  (cond (black move) "X"
-        (white move) "O"
-        :else "-"))
-
-(defn board->ascii [{bs :black ws :white dim :dim}]
-  (let [bset (set bs)
-        wset (set ws)]
-    (for [y (range dim)]
-      (for [x (range dim)]
-        (stone-str bset wset [x y])))))
 
 (defn to-png [svg-string output-fn]
   (let [rdr (new StringReader svg-string)
