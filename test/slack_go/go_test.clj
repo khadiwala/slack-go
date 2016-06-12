@@ -165,11 +165,13 @@
         (is (= 1 (:white (score-counts setup))))
         (is (= (- (* 100 100) 9 1) (:neutral (score-counts setup))))))
 
-    (testing "white stone is assumed dead"
+    (testing "white stones are assumed dead"
       (let [setup (play-all (conj black-corner
                                   [:white [5 5]]
                                   [:white [0 0]]
-                                  [:black [0 1]]))]
+                                  [:black [0 1]]
+                                  [:white [1 0]]
+                                  [:black [1 1]]))]
         (pprint (board->ascii setup))
         (is (= 9 (:black (score-counts setup))))
         (is (= 1 (:white (score-counts setup))))

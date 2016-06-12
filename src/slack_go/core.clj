@@ -155,14 +155,22 @@
       "No game in progress"))))
 
 (defn ai
-  [channel user-name]
-  (in-channel-response
-   (dosync
-    (if-let [curr (channel @game-map)]
-      (if-let [move (random-move curr)]
-        (alter-and-upload channel #(assoc % channel (play-move curr move)))
-        "No legal moves to play")
-      "No game in progress"))))
+
+  ([channel user-name]
+   (ai channel user-name "1"))
+
+  ([channel user-name num-moves]
+   (in-channel-response
+    (dosync
+     (loop [board (channel @game-map)
+            n (parse-int num-moves)]
+       (if (= n 0)
+         (alter-and-upload channel #(assoc % channel board))
+         (if-let [move (random-move board)]
+           (recur (play-move board move) (dec n))
+           (str
+            "No legal moves left:\n"
+            (alter-and-upload channel #(assoc % channel board))))))))))
 
 (defn pass
   "player passes"
