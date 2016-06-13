@@ -1,8 +1,7 @@
 (ns slack-go.go-test
   (:require [clojure.test :refer :all]
             [slack-go.go :refer :all]
-            [clojure.set :refer [union difference]]
-            [clojure.pprint :refer :all]))
+            [clojure.set :refer [union difference]]))
 
 (defn initial [dim]
   {:black []
@@ -172,7 +171,6 @@
                                   [:black [0 1]]
                                   [:white [1 0]]
                                   [:black [1 1]]))]
-        (pprint (board->ascii setup))
         (is (= 9 (:black (score-counts setup))))
         (is (= 1 (:white (score-counts setup))))
         (is (= 71 (:neutral (score-counts setup))))))))

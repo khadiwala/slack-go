@@ -5,11 +5,13 @@
             [clojure.string :refer [split lower-case starts-with?]]
             [clojure.string :as string]
             [clojure.math.numeric-tower :refer [abs]]
+            [clojure.stacktrace :refer [root-cause]]
             [the.parsatron :refer [run]]
             [clj-http.client :as client]
             [compojure.core :refer :all]
             [compojure.route :as route]
             [ring.adapter.jetty :as jetty]
+            [ring.middleware.reload :refer [wrap-reload]]
             [ring.middleware.defaults :refer [wrap-defaults api-defaults]]
             [ring.middleware.json :refer [wrap-json-body, wrap-json-response]]
             [ring.util.response :as response])
@@ -155,10 +157,8 @@
       "No game in progress"))))
 
 (defn ai
-
   ([channel user-name]
    (ai channel user-name "1"))
-
   ([channel user-name num-moves]
    (in-channel-response
     (dosync
@@ -220,27 +220,31 @@
            (score-string curr komi))
       "No game in progress"))))
 
+(defn print-return "print x, then return it" [x]
+  (print x) x)
+
 (defn posted [channel-name user-name text]
-  (let [[cmd & args] (split (lower-case text) #"\s+")
-        channel-key (keyword channel-name)
-        user-key (keyword user-name)]
-    (cond
-      (= cmd "start") (apply start channel-key args)
-      (= cmd "play") (apply play channel-key user-key args)
-      (= cmd "pass") (apply pass channel-key user-key args)
-      (= cmd "end") (apply end channel-key user-key args)
-      (= cmd "show") (show channel-key user-key)
-      (= cmd "score") (apply score channel-key user-key args)
-      (= cmd "ai") (apply ai channel-key user-key args)
-      (= cmd "help") (in-channel-response help)
-      (= cmd "kick") "I'm up!")))
+  (try
+    (let [[cmd & args] (split (lower-case text) #"\s+")
+         channel-key (keyword channel-name)
+         user-key (keyword user-name)]
+     (cond
+       (= cmd "start") (apply start channel-key args)
+       (= cmd "play") (apply play channel-key user-key args)
+       (= cmd "pass") (apply pass channel-key user-key args)
+       (= cmd "end") (apply end channel-key user-key args)
+       (= cmd "show") (show channel-key user-key)
+       (= cmd "score") (apply score channel-key user-key args)
+       (= cmd "ai") (apply ai channel-key user-key args)
+       (= cmd "help") (in-channel-response help)
+       (= cmd "kick") "I'm up!"))
+    (catch Exception e
+      (str "unable to process request, " (.toString e)))))
 
 (defroutes app-routes
   (POST "/go" [channel_id user_name text :as req]
-    (prn req)
-    (let [resp (posted channel_id user_name text)]
-      (prn resp)
-      resp))
+    (print req)
+    (print-return (posted channel_id user_name text)))
   (route/resources "/")
   (route/not-found "not found"))
 
@@ -251,4 +255,4 @@
 
 (defn -main []
   (let [port (Integer/parseInt (get (System/getenv) "PORT" "5000"))]
-    (jetty/run-jetty app {:port port})))
+    (jetty/run-jetty (wrap-reload app) {:port port})))
